@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using MelonLoader;
 using Newtonsoft.Json;
 using UIExpansionKit.API;
+using UIExpansionKit.Components;
 using UnhollowerRuntimeLib;
 using UnityEngine;
 using UnityEngine.Events;
@@ -45,44 +46,65 @@ namespace UniversalFavsExporter
                 if (Child.GetComponent<UiAvatarList>() != null) // Is A Avi List
                 {
                     //Make Button
-                    var Dupe = UnityEngine.Object.Instantiate(GameObject.Find("UserInterface/MenuContent/Screens/Avatar/Change Button"), Child.transform);
+                    var Dupe = UnityEngine.Object.Instantiate(GameObject.Find("UserInterface/MenuContent/Screens/Avatar/Change Button"), Child.Find("Button"));
 
-                    Dupe.transform.localPosition = new Vector3(-25f, 219f, 0f);
-                    Dupe.GetComponentInChildren<Text>(true).text = "Export";
-                    Dupe.GetComponent<RectTransform>().sizeDelta = new Vector2(150f, 80f);
+                    Dupe.GetComponent<RectTransform>().sizeDelta = new Vector2(30f, 80f);
+
+                    //This Is Done To Fix Positioning
+                    Dupe.transform.localPosition = new Vector3(115f, 0f, 0f);
+                    Dupe.transform.SetParent(Child.Find("Button/TitleText"));
+
+                    Dupe.GetComponentInChildren<Text>(true).text = "E";
                     Dupe.GetComponent<Button>().onClick = new Button.ButtonClickedEvent();
                     Dupe.GetComponent<Button>().onClick.AddListener(DelegateSupport.ConvertDelegate<UnityAction>(
                         new Action(() =>
                         {
-                            var FavsInList = Child.GetComponentsInChildren<VRCUiContentButton>(true).Select(o => o.field_Public_String_0).Where(p => p != null);
+                            var FavsInList = Child.GetComponentsInChildren<VRCUiContentButton>(true)
+                                .Select(o => o.field_Public_String_0).Where(p => p != null).ToList();
 
-                            var Json = JsonConvert.SerializeObject(FavsInList);
-
-                            if (!Directory.Exists(Environment.CurrentDirectory + "\\ExportedFavs"))
+                            if (FavsInList.Count > 0)
                             {
-                                Directory.CreateDirectory(Environment.CurrentDirectory + "\\ExportedFavs");
+                                var Json = JsonConvert.SerializeObject(FavsInList);
+
+                                if (!Directory.Exists(Environment.CurrentDirectory + "\\ExportedFavs"))
+                                {
+                                    Directory.CreateDirectory(Environment.CurrentDirectory + "\\ExportedFavs");
+                                }
+
+                                var FilePath = Environment.CurrentDirectory + "\\ExportedFavs\\" +
+                                               Child.Find("Button/TitleText").GetComponent<Text>().text + ".json";
+
+                                File.WriteAllText(FilePath, Json);
+
+                                ChillOkayPopup("Alert",
+                                    "Your Fav List Was Exported To: " + FilePath + "\n\nYou Can Move It To " +
+                                    Environment.CurrentDirectory +
+                                    "\\UserData\\FavCatImport\\ To Import The Fav List Into Plague's Modpack.\n\nModpack Discord Invite: https://plague.cx",
+                                    PopupType.FullScreen);
                             }
-
-                            var FilePath = Environment.CurrentDirectory + "\\ExportedFavs\\" +
-                                           Child.Find("Button/TitleText").GetComponent<Text>().text + ".json";
-
-                            File.WriteAllText(FilePath, Json);
-
-                            ChillOkayPopup("Alert", "Your Fav List Was Exported To: " + FilePath + "\n\nYou Can Move It To " + Environment.CurrentDirectory + "\\UserData\\FavCatImport\\ To Import The Fav List Into Plague's Modpack.", PopupType.FullScreen);
+                            else
+                            {
+                                ChillOkayPopup("Error",
+                                    "No Favs In List To Export!",
+                                    PopupType.FullScreen);
+                            }
                         })));
 
-                    //Fix Collapsing Issue
-                    var CollapseButton =
-                        GameObject.Find(
-                            "UserInterface/MenuContent/Screens/Avatar/Vertical Scroll View/Viewport/Content/Personal Avatar List/Button/");
+                    Dupe.SetActive(Child.gameObject.active);
 
-                    CollapseButton.GetComponent<Button>().onClick.AddListener(DelegateSupport.ConvertDelegate<UnityAction>(
-                        new Action(() =>
-                        {
-                            //This Should Run AFTER The Original, So It Should Be Opposite.
-                            Dupe.transform.localPosition = CollapseButton.transform.Find("ToggleIcon").GetComponent<Image>().activeSprite.name ==
-                                                           "collapsebutton" ? new Vector3(-125f, 219f, 0f) : new Vector3(-125f, 114f, 0f);
-                        })));
+                    EnableDisableListener Listener = null;
+
+                    Listener = Child.gameObject.GetComponent<EnableDisableListener>() == null ? Child.gameObject.AddComponent<EnableDisableListener>() : Child.gameObject.GetComponent<EnableDisableListener>();
+                        
+                    Listener.OnEnabled += () =>
+                    {
+                        Dupe.SetActive(true);
+                    };
+
+                    Listener.OnDisabled += () =>
+                    {
+                        Dupe.SetActive(false);
+                    };
                 }
             }
 
