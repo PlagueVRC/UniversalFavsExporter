@@ -47,7 +47,7 @@ namespace UniversalFavsExporter
                     //Make Button
                     var Dupe = UnityEngine.Object.Instantiate(GameObject.Find("UserInterface/MenuContent/Screens/Avatar/Change Button"), Child.transform);
 
-                    Dupe.transform.localPosition = new Vector3(-125f, 219f, 0f);
+                    Dupe.transform.localPosition = new Vector3(-25f, 219f, 0f);
                     Dupe.GetComponentInChildren<Text>(true).text = "Export";
                     Dupe.GetComponent<RectTransform>().sizeDelta = new Vector2(150f, 80f);
                     Dupe.GetComponent<Button>().onClick = new Button.ButtonClickedEvent();
