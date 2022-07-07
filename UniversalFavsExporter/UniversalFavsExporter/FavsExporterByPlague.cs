@@ -40,89 +40,81 @@ namespace UniversalFavsExporter
 
         public IEnumerator DelayedUIInit()
         {
-            //Get All Fav Lists
-            var AvatarFavsArea =
-                GameObject.Find("UserInterface/MenuContent/Screens/Avatar/Vertical Scroll View/Viewport/Content/");
-
-            while (AvatarFavsArea == null || !AvatarFavsArea.active)
-            {
-                yield return new WaitForSeconds(1f);
-
-                AvatarFavsArea = GameObject.Find("UserInterface/MenuContent/Screens/Avatar/Vertical Scroll View/Viewport/Content/");
-            }
-
-            for (var i = 0; i < AvatarFavsArea.transform.childCount; i++)
-            {
-                var Child = AvatarFavsArea.transform.GetChild(i);
-
-                if (Child.GetComponent<UiAvatarList>() != null) // Is A Avi List
-                {
-                    //Make Button
-                    var Dupe = UnityEngine.Object.Instantiate(GameObject.Find("UserInterface/MenuContent/Screens/Avatar/Change Button"), Child.Find("Button"));
-
-                    Dupe.GetComponent<RectTransform>().sizeDelta = new Vector2(30f, 80f);
-
-                    //This Is Done To Fix Positioning
-                    Dupe.transform.localPosition = new Vector3(115f, 0f, 0f);
-                    Dupe.transform.SetParent(Child.Find("Button/TitleText"));
-
-                    Dupe.GetComponentInChildren<Text>(true).text = "E";
-                    Dupe.GetComponent<Button>().onClick = new Button.ButtonClickedEvent();
-                    Dupe.GetComponent<Button>().onClick.AddListener(DelegateSupport.ConvertDelegate<UnityAction>(
-                        new Action(() =>
-                        {
-                            var FavsInList = Child.GetComponentsInChildren<VRCUiContentButton>(true)
-                                .Select(o => o.field_Public_String_0).Where(p => p != null).ToList();
-
-                            if (FavsInList.Count > 0)
-                            {
-                                var Json = JsonConvert.SerializeObject(FavsInList);
-
-                                if (!Directory.Exists(Environment.CurrentDirectory + "\\ExportedFavs"))
-                                {
-                                    Directory.CreateDirectory(Environment.CurrentDirectory + "\\ExportedFavs");
-                                }
-
-                                var FilePath = Environment.CurrentDirectory + "\\ExportedFavs\\" +
-                                               MakeValidFileName(Child.Find("Button/TitleText").GetComponent<Text>().text) + ".json";
-
-                                File.WriteAllText(FilePath, Json);
-
-                                ChillOkayPopup("Alert",
-                                    "Your Fav List Was Exported To: " + FilePath + "\n\nYou Can Move It To " +
-                                    Environment.CurrentDirectory +
-                                    "\\UserData\\FavCatImport\\ To Import The Fav List Into Plague's Modpack.\n\nModpack Discord Invite: https://plague.cx",
-                                    PopupType.FullScreen);
-                            }
-                            else
-                            {
-                                ChillOkayPopup("Error",
-                                    "No Favs In List To Export!",
-                                    PopupType.FullScreen);
-                            }
-                        })));
-
-                    Dupe.SetActive(Child.gameObject.active);
-
-                    EnableDisableListener Listener = null;
-
-                    Listener = Child.gameObject.GetComponent<EnableDisableListener>() == null ? Child.gameObject.AddComponent<EnableDisableListener>() : Child.gameObject.GetComponent<EnableDisableListener>();
-                        
-                    Listener.OnEnabled += () =>
-                    {
-                        Dupe.SetActive(true);
-                    };
-
-                    Listener.OnDisabled += () =>
-                    {
-                        Dupe.SetActive(false);
-                    };
-                }
-            }
-
             MelonLogger.Msg("Init!");
 
-            yield break;
+            while (true)
+            {
+                //Get All Fav Lists
+                var AvatarFavsArea =
+                    GameObject.Find("UserInterface/MenuContent/Screens/Avatar/Vertical Scroll View/Viewport/Content/");
+
+                while (AvatarFavsArea == null || !AvatarFavsArea.active)
+                {
+                    yield return new WaitForSeconds(1f);
+
+                    AvatarFavsArea = GameObject.Find("UserInterface/MenuContent/Screens/Avatar/Vertical Scroll View/Viewport/Content/");
+                }
+
+                var Lists = Resources.FindObjectsOfTypeAll<UiAvatarList>().Select(o => o.transform).ToList();
+
+                for (var i = 0; i < Lists.Count; i++)
+                {
+                    var Child = Lists[i];
+
+                    if (Child.GetComponent<UiAvatarList>() != null && Child.Find("Button/TitleText/FavsExporter") == null) // Is A Avi List
+                    {
+                        //Make Button
+                        var Dupe = UnityEngine.Object.Instantiate(GameObject.Find("UserInterface/MenuContent/Screens/Avatar/Change Button"), Child.Find("Button"));
+
+                        Dupe.name = "FavsExporter";
+                        Dupe.GetComponent<RectTransform>().sizeDelta = new Vector2(30f, 80f);
+
+                        //This Is Done To Fix Positioning
+                        Dupe.transform.localPosition = new Vector3(115f, 0f, 0f);
+                        Dupe.transform.SetParent(Child.Find("Button/TitleText"));
+
+                        Dupe.GetComponentInChildren<Text>(true).text = "E";
+                        Dupe.GetComponent<Button>().onClick = new Button.ButtonClickedEvent();
+                        Dupe.GetComponent<Button>().onClick.AddListener(DelegateSupport.ConvertDelegate<UnityAction>(
+                            new Action(() =>
+                            {
+                                var FavsInList = Child.GetComponentsInChildren<VRCUiContentButton>(true)
+                                    .Select(o => o.field_Public_String_0).Where(p => p != null).ToList();
+
+                                if (FavsInList.Count > 0)
+                                {
+                                    var Json = JsonConvert.SerializeObject(FavsInList);
+
+                                    if (!Directory.Exists(Environment.CurrentDirectory + "\\ExportedFavs"))
+                                    {
+                                        Directory.CreateDirectory(Environment.CurrentDirectory + "\\ExportedFavs");
+                                    }
+
+                                    var FilePath = Environment.CurrentDirectory + "\\ExportedFavs\\" +
+                                                   MakeValidFileName(Child.Find("Button/TitleText").GetComponent<Text>().text) + ".json";
+
+                                    File.WriteAllText(FilePath, Json);
+
+                                    ChillOkayPopup("Alert",
+                                        "Your Fav List Was Exported To: " + FilePath + "\n\nYou Can Move It To " +
+                                        Environment.CurrentDirectory +
+                                        "\\UserData\\FavCatImport\\ To Import The Fav List Into Plague's Modpack.\n\nModpack Discord Invite: https://plague.cx",
+                                        PopupType.FullScreen);
+                                }
+                                else
+                                {
+                                    ChillOkayPopup("Error",
+                                        "No Favs In List To Export!",
+                                        PopupType.FullScreen);
+                                }
+                            })));
+
+                        Dupe.SetActive(true);
+                    }
+                }
+
+                yield return new WaitForSeconds(5f);
+            }
         }
 
         static char[] _invalids;
